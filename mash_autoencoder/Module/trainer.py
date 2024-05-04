@@ -39,6 +39,8 @@ class Trainer(object):
         save_result_folder_path: Union[str, None] = None,
         save_log_folder_path: Union[str, None] = None,
     ) -> None:
+        self.loss_kl_weight = 1e-3
+
         self.accum_iter = accum_iter
         self.dtype = dtype
         self.device = device
@@ -65,13 +67,13 @@ class Trainer(object):
         self.logger = Logger()
 
         self.train_loader = DataLoader(
-            MashDataset(dataset_root_folder_path),
+            MashDataset(dataset_root_folder_path, 'train'),
             shuffle=True,
             batch_size=batch_size,
             num_workers=num_workers,
         )
         self.val_loader = DataLoader(
-            MashDataset(dataset_root_folder_path),
+            MashDataset(dataset_root_folder_path, 'val'),
             shuffle=False,
             batch_size=batch_size,
             num_workers=num_workers,
@@ -151,7 +153,9 @@ class Trainer(object):
         kl = results['kl']
 
         loss_mash_params = self.loss_fn(mash_params, gt_mash_params)
-        loss_kl = 1e-3 * torch.sum(kl) / kl.shape[0]
+        loss_kl = torch.sum(kl) / kl.shape[0]
+
+        loss_kl = self.loss_kl_weight * loss_kl
 
         loss = loss_mash_params + loss_kl
 
@@ -192,7 +196,9 @@ class Trainer(object):
             kl = results['kl']
 
             loss_mash_params = self.loss_fn(mash_params, gt_mash_params)
-            loss_kl = 1e-3 * torch.sum(kl) / kl.shape[0]
+            loss_kl = torch.sum(kl) / kl.shape[0]
+
+            loss_kl = self.loss_kl_weight * loss_kl
 
             loss = loss_mash_params + loss_kl
 
@@ -243,14 +249,13 @@ class Trainer(object):
 
         print("[INFO][Trainer::train]")
         print("\t start training ...")
-        pbar = tqdm(total=final_step)
-        pbar.update(self.step)
 
         loss_dict_list = []
         while self.step < final_step:
             self.model.train()
 
-            for data in tqdm(self.train_loader):
+            pbar = tqdm(total=len(self.train_loader))
+            for data in self.train_loader:
                 train_loss_dict = self.trainStep(data, optimizer)
 
                 loss_dict_list.append(train_loss_dict)
@@ -285,6 +290,8 @@ class Trainer(object):
                 if self.step >= final_step:
                     break
 
+            pbar.close()
+
             eval_step += 1
             if eval_step % 1 == 0:
                 print("[INFO][Trainer::train]")
@@ -297,17 +304,17 @@ class Trainer(object):
                         self.logger.addScalar("Eval/" + key, item, self.step)
 
                 print(
+                    " loss mash params:",
+                    eval_loss_dict["LossMashParams"],
+                    " loss kl:",
+                    eval_loss_dict["LossKL"],
                     " loss:",
                     eval_loss_dict["Loss"],
-                    " acc:",
-                    eval_loss_dict["Accuracy"],
-                    " positive occ:",
-                    eval_loss_dict["PositiveOCC"],
                 )
 
-                self.autoSaveModel(eval_loss_dict["Accuracy"], False)
+                self.autoSaveModel(eval_loss_dict["LossMashParams"])
 
-            # self.autoSaveModel(train_loss_dict['Accuracy'], False)
+            # self.autoSaveModel(train_loss_dict['LossMashParams'])
 
         return True
 
