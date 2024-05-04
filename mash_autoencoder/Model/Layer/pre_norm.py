@@ -1,6 +1,6 @@
 from torch import nn
 
-from td_shape_to_vec_set.Method.io import exists
+from mash_autoencoder.Method.io import exists
 
 
 class PreNorm(nn.Module):

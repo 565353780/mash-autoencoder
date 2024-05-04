@@ -21,7 +21,7 @@ class MashKLAutoEncoder(nn.Module):
         sh_degree: int = 2,
         d_hidden: int = 400,
         d_hidden_embed: int = 100,
-        d_latent=64,
+        d_latent=1,
         n_layer: int = 96,
         n_cross: int = 4,
         ssm_cfg=None,
@@ -36,9 +36,10 @@ class MashKLAutoEncoder(nn.Module):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__()
         self.residual_in_fp32 = residual_in_fp32
+        self.fused_add_norm = fused_add_norm
 
-        self.mask_degree = mask_degree
-        self.sh_degree = sh_degree
+        self.mask_dim = 2 * mask_degree + 1
+        self.sh_dim = (sh_degree + 1) ** 2
 
         assert d_hidden % 4 == 0
 
@@ -88,7 +89,7 @@ class MashKLAutoEncoder(nn.Module):
         )
         self.decoder_ff = PreNorm(d_hidden, FeedForward(d_hidden))
 
-        self.to_outputs = nn.Linear(d_hidden, 1)
+        self.to_outputs = nn.Linear(d_hidden, self.mask_dim + self.sh_dim + 6)
 
         self.apply(
             partial(
@@ -159,7 +160,9 @@ class MashKLAutoEncoder(nn.Module):
         mash_params = self.to_outputs(latents)
         return mash_params
 
-    def forward(self, mash_params):
+    def forward(self, data):
+        mash_params = data['mash_params']
+
         x, kl = self.encode(mash_params)
 
         output = self.decode(x)

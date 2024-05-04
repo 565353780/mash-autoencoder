@@ -3,7 +3,7 @@ from torch import nn, einsum
 from einops import rearrange, repeat
 from timm.models.layers import DropPath
 
-from td_shape_to_vec_set.Method.io import exists, default
+from mash_autoencoder.Method.io import exists, default
 
 
 class Attention(nn.Module):

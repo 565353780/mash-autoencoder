@@ -2,7 +2,7 @@ from torch import nn
 from timm.models.layers import DropPath
 
 
-from td_shape_to_vec_set.Model.AutoEncoder.geglu import GEGLU
+from mash_autoencoder.Model.Layer.geglu import GEGLU
 
 
 class FeedForward(nn.Module):

@@ -257,29 +257,16 @@ class Trainer(object):
 
                 lr = self.getLr(optimizer)
 
-                if self.logger.isValid():
-                    if (self.step + 1) % self.accum_iter == 0:
-                        for key in train_loss_dict.keys():
-                            value = 0
-                            for i in range(len(loss_dict_list)):
-                                value += loss_dict_list[i][key]
-                            value /= len(loss_dict_list)
-                            self.logger.addScalar("Train/" + key, value, self.step)
-                        self.logger.addScalar("Train/Lr", lr, self.step)
+                if (self.step + 1) % self.accum_iter == 0:
+                    for key in train_loss_dict.keys():
+                        value = 0
+                        for i in range(len(loss_dict_list)):
+                            value += loss_dict_list[i][key]
+                        value /= len(loss_dict_list)
+                        self.logger.addScalar("Train/" + key, value, self.step)
+                    self.logger.addScalar("Train/Lr", lr, self.step)
 
-                        loss_dict_list = []
-
-                    gt_occ = data["occ"]
-                    occ_shape = gt_occ.shape
-                    positive_occ_num = torch.where(gt_occ > 0.5)[0].shape[0]
-                    occ_num = 1
-                    for size in occ_shape:
-                        occ_num *= size
-
-                    positive_occ_percent = 1.0 * positive_occ_num / occ_num
-                    self.logger.addScalar(
-                        "Train/PositiveOCC", positive_occ_percent, self.step
-                    )
+                    loss_dict_list = []
 
                 pbar.set_description(
                     "LOSS %.6f LR %.4f"
