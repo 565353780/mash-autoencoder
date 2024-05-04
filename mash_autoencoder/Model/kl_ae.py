@@ -19,7 +19,7 @@ class MashKLAutoEncoder(nn.Module):
         self,
         mask_degree: int = 3,
         sh_degree: int = 2,
-        d_hidden: int = 100,
+        d_hidden: int = 256,
         d_hidden_embed: int = 48,
         d_latent=1,
         n_layer: int = 24,
@@ -47,6 +47,26 @@ class MashKLAutoEncoder(nn.Module):
         self.position_embed = PointEmbed(3, d_hidden_embed, d_hidden // 4)
         self.mask_embed = PointEmbed(self.mask_dim, d_hidden_embed, d_hidden // 4)
         self.sh_embed = PointEmbed(self.sh_dim, d_hidden_embed, d_hidden // 4)
+
+        self.encode_layers = nn.ModuleList(
+            [
+                create_block(
+                    d_hidden,
+                    ssm_cfg=ssm_cfg,
+                    norm_epsilon=norm_epsilon,
+                    rms_norm=rms_norm,
+                    residual_in_fp32=residual_in_fp32,
+                    fused_add_norm=fused_add_norm,
+                    layer_idx=i,
+                    **factory_kwargs,
+                )
+                for i in range(n_layer)
+            ]
+        )
+
+        self.encode_norm_f = (nn.LayerNorm if not rms_norm else RMSNorm)(
+            d_hidden, eps=norm_epsilon, **factory_kwargs
+        )
 
         self.cross_attend_blocks = nn.ModuleList(
             [
@@ -114,12 +134,32 @@ class MashKLAutoEncoder(nn.Module):
 
     def encode(self, mash_params: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         mash_embeddings = self.embedMash(mash_params)
+        hidden_states = mash_embeddings
+        residual = None
+
+        for layer in self.encode_layers:
+            hidden_states, residual = layer(hidden_states, residual)
+
+        if not self.fused_add_norm:
+            residual = (hidden_states + residual) if residual is not None else hidden_states
+            hidden_states = self.encode_norm_f(residual.to(dtype=self.encode_norm_f.weight.dtype))
+        else:
+            fused_add_norm_fn = rms_norm_fn if isinstance(self.encode_norm_f, RMSNorm) else layer_norm_fn
+            hidden_states = fused_add_norm_fn(
+                hidden_states,
+                self.encode_norm_f.weight,
+                self.encode_norm_f.bias,
+                eps=self.encode_norm_f.eps,
+                residual=residual,
+                prenorm=False,
+                residual_in_fp32=self.residual_in_fp32,
+            )
 
         cross_attn, cross_ff = self.cross_attend_blocks
 
         x = (
-            cross_attn(mash_embeddings, context=mash_embeddings, mask=None)
-            + mash_embeddings
+            cross_attn(hidden_states, context=mash_embeddings, mask=None)
+            + hidden_states
         )
         x = cross_ff(x) + x
 
