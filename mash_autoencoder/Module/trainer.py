@@ -39,7 +39,7 @@ class Trainer(object):
         save_result_folder_path: Union[str, None] = None,
         save_log_folder_path: Union[str, None] = None,
     ) -> None:
-        self.loss_kl_weight = 1e-3
+        self.loss_kl_weight = 1e-6
 
         self.accum_iter = accum_iter
         self.dtype = dtype
@@ -81,7 +81,7 @@ class Trainer(object):
 
         self.model = MashKLAutoEncoder(dtype=self.dtype, device=self.device).to(self.device)
 
-        self.loss_fn = nn.MSELoss()
+        self.loss_fn = nn.L1Loss()
 
         self.initRecords()
 

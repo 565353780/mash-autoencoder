@@ -1,6 +1,6 @@
-from typing import Tuple
 import torch
 from torch import nn
+from typing import Tuple
 from functools import partial
 from mamba_ssm.ops.triton.layernorm import RMSNorm, layer_norm_fn, rms_norm_fn
 
@@ -41,12 +41,12 @@ class MashKLAutoEncoder(nn.Module):
         self.mask_dim = 2 * mask_degree + 1
         self.sh_dim = (sh_degree + 1) ** 2
 
-        assert d_hidden % 4 == 0
+        assert d_hidden % 2 == 0
 
-        self.rotation_embed = PointEmbed(3, d_hidden_embed, d_hidden // 4)
-        self.position_embed = PointEmbed(3, d_hidden_embed, d_hidden // 4)
-        self.mask_embed = PointEmbed(self.mask_dim, d_hidden_embed, d_hidden // 4)
-        self.sh_embed = PointEmbed(self.sh_dim, d_hidden_embed, d_hidden // 4)
+        self.rotation_embed = PointEmbed(3, d_hidden_embed, d_hidden // 2)
+        self.position_embed = PointEmbed(3, d_hidden_embed, d_hidden // 2)
+        self.mask_embed = PointEmbed(self.mask_dim, d_hidden_embed, d_hidden // 2)
+        self.sh_embed = PointEmbed(self.sh_dim, d_hidden_embed, d_hidden // 2)
 
         self.encode_layers = nn.ModuleList(
             [
@@ -109,7 +109,7 @@ class MashKLAutoEncoder(nn.Module):
         )
         self.decoder_ff = PreNorm(d_hidden, FeedForward(d_hidden))
 
-        self.to_outputs = nn.Linear(d_hidden, self.mask_dim + self.sh_dim + 6)
+        self.to_outputs = nn.Linear(d_hidden, self.mask_dim + self.sh_dim)
 
         self.apply(
             partial(
@@ -120,25 +120,31 @@ class MashKLAutoEncoder(nn.Module):
         )
         return
 
-    def embedMash(self, mash_params: torch.Tensor) -> torch.Tensor:
-        rotation_embeddings = self.rotation_embed(mash_params[:, :, :3])
-        position_embeddings = self.position_embed(mash_params[:, :, 3:6])
-        mask_embeddings = self.mask_embed(mash_params[:, :, 6 : 6 + self.mask_dim])
-        sh_embeddings = self.sh_embed(mash_params[:, :, 6 + self.mask_dim :])
+    def embedPose(self, pose_params: torch.Tensor) -> torch.Tensor:
+        rotation_embeddings = self.rotation_embed(pose_params[:, :, :3])
+        position_embeddings = self.position_embed(pose_params[:, :, 3:])
 
-        mash_embeddings = torch.cat(
-            [rotation_embeddings, position_embeddings, mask_embeddings, sh_embeddings],
+        pose_embeddings = torch.cat([rotation_embeddings, position_embeddings], dim=2)
+        return pose_embeddings
+
+    def embedShape(self, shape_params: torch.Tensor) -> torch.Tensor:
+        mask_embeddings = self.mask_embed(shape_params[:, :, :self.mask_dim])
+        sh_embeddings = self.sh_embed(shape_params[:, :, self.mask_dim :])
+
+        shape_embeddings = torch.cat(
+            [mask_embeddings, sh_embeddings],
             dim=2,
         )
-        return mash_embeddings
+        return shape_embeddings
 
     def encode(self, mash_params: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-        mash_embeddings = self.embedMash(mash_params)
-        hidden_states = mash_embeddings
-        residual = None
+        pose_embeddings = self.embedPose(mash_params[:, :, :6])
+        shape_embeddings = self.embedShape(mash_params[:, :, 6:])
+
+        hidden_states = shape_embeddings
 
         for layer in self.encode_layers:
-            hidden_states, residual = layer(hidden_states, residual)
+            hidden_states, residual = layer(hidden_states, pose_embeddings)
 
         if not self.fused_add_norm:
             residual = (hidden_states + residual) if residual is not None else hidden_states
@@ -158,7 +164,7 @@ class MashKLAutoEncoder(nn.Module):
         cross_attn, cross_ff = self.cross_attend_blocks
 
         x = (
-            cross_attn(hidden_states, context=mash_embeddings, mask=None)
+            cross_attn(hidden_states, context=pose_embeddings, mask=None)
             + hidden_states
         )
         x = cross_ff(x) + x
@@ -171,12 +177,13 @@ class MashKLAutoEncoder(nn.Module):
         kl = posterior.kl()
         return x, kl
 
-    def decode(self, x):
+    def decode(self, x, pose_params):
+        pose_embeddings = self.embedPose(pose_params)
+
         hidden_states = self.proj(x)
-        residual = None
 
         for layer in self.layers:
-            hidden_states, residual = layer(hidden_states, residual)
+            hidden_states, residual = layer(hidden_states, pose_embeddings)
 
         if not self.fused_add_norm:
             residual = (hidden_states + residual) if residual is not None else hidden_states
@@ -193,11 +200,13 @@ class MashKLAutoEncoder(nn.Module):
                 residual_in_fp32=self.residual_in_fp32,
             )
 
-        latents = self.decoder_cross_attn(hidden_states, context=hidden_states)
+        latents = self.decoder_cross_attn(hidden_states, context=pose_embeddings)
 
         latents = latents + self.decoder_ff(latents)
 
-        mash_params = self.to_outputs(latents)
+        shape_params = self.to_outputs(latents)
+
+        mash_params = torch.cat([pose_params, shape_params], dim=2)
         return mash_params
 
     def forward(self, data):
@@ -205,6 +214,6 @@ class MashKLAutoEncoder(nn.Module):
 
         x, kl = self.encode(mash_params)
 
-        output = self.decode(x)
+        output = self.decode(x, mash_params[:, :, :6])
 
         return {"mash_params": output, "kl": kl}

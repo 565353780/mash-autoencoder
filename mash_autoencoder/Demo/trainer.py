@@ -10,7 +10,7 @@ def demo():
     accum_iter = 1
     num_workers = 4
     model_file_path = "./output/pretrain-S/model_last.pth"
-    model_file_path = None
+    #model_file_path = None
     dtype = torch.float32
     device = "cuda:0"
     warm_epoch_step_num = 100
