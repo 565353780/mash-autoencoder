@@ -14,7 +14,7 @@ from mash_autoencoder.Model.Layer.diagonal_gaussian_distribution import (
 )
 
 
-class MashKLAutoEncoder(nn.Module):
+class ShapeVAE(nn.Module):
     def __init__(
         self,
         mask_degree: int = 3,
@@ -138,13 +138,17 @@ class MashKLAutoEncoder(nn.Module):
         return shape_embeddings
 
     def encode(self, mash_params: torch.Tensor, drop_prob: float = 0.0) -> Tuple[torch.Tensor, torch.Tensor]:
-        pose_embeddings = self.embedPose(mash_params[:, :, :6])
-        shape_embeddings = self.embedShape(mash_params[:, :, 6:])
+        pose_params = mash_params[:, :, :6]
+        shape_params = mash_params[:, :, 6:]
+
+        pose_embeddings = self.embedPose(pose_params)
+        shape_embeddings = self.embedShape(shape_params)
 
         if drop_prob > 0.0:
-            mask = shape_embeddings.new_empty(*shape_embeddings.shape[:2])
+            mask = shape_params.new_empty(*shape_params.shape[:2])
             mask = mask.bernoulli_(1 - drop_prob)
-            shape_embeddings = shape_embeddings * mask.unsqueeze(-1).expand_as(shape_embeddings).type(shape_embeddings.dtype)
+            shape_params = shape_params * mask.unsqueeze(-1).expand_as(shape_params).type(shape_params.dtype)
+
 
         hidden_states = shape_embeddings
 
@@ -169,7 +173,7 @@ class MashKLAutoEncoder(nn.Module):
         cross_attn, cross_ff = self.cross_attend_blocks
 
         x = (
-            cross_attn(hidden_states, context=pose_embeddings, mask=None)
+            cross_attn(hidden_states, context=hidden_states, mask=None)
             + hidden_states
         )
         x = cross_ff(x) + x

@@ -14,7 +14,8 @@ from torch.optim.lr_scheduler import (
 from mash_autoencoder.Dataset.mash import MashDataset
 from mash_autoencoder.Method.time import getCurrentTime
 from mash_autoencoder.Method.path import createFileFolder
-from mash_autoencoder.Model.kl_ae import MashKLAutoEncoder
+from mash_autoencoder.Model.shape_vae import ShapeVAE
+from mash_autoencoder.Model.mash_vae import MashVAE
 from mash_autoencoder.Module.logger import Logger
 
 
@@ -40,7 +41,7 @@ class Trainer(object):
         save_result_folder_path: Union[str, None] = None,
         save_log_folder_path: Union[str, None] = None,
     ) -> None:
-        self.loss_kl_weight = 0.0
+        self.loss_kl_weight = 1e-3
 
         self.accum_iter = accum_iter
         self.dtype = dtype
@@ -81,7 +82,7 @@ class Trainer(object):
             num_workers=num_workers,
         )
 
-        self.model = MashKLAutoEncoder(dtype=self.dtype, device=self.device).to(self.device)
+        self.model = MashVAE(dtype=self.dtype, device=self.device).to(self.device)
 
         self.loss_fn = nn.L1Loss()
 

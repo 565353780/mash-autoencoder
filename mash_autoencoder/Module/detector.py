@@ -1,10 +1,10 @@
 import os
 import torch
-import trimesh
 import numpy as np
 from typing import Union
 
-from mash_autoencoder.Model.kl_ae import MashKLAutoEncoder
+from mash_autoencoder.Model.ShapeVAE import ShapeVAE
+from mash_autoencoder.Model.MashVAE import MashVAE
 
 
 class Detector(object):
@@ -17,7 +17,7 @@ class Detector(object):
         self.dtype = dtype
         self.device = device
 
-        self.model = MashKLAutoEncoder(dtype=self.dtype, device=self.device).to(self.device)
+        self.model = MashVAE(dtype=self.dtype, device=self.device).to(self.device)
 
         if model_file_path is not None:
             self.loadModel(model_file_path)
