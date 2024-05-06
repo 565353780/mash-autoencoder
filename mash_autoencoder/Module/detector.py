@@ -3,8 +3,8 @@ import torch
 import numpy as np
 from typing import Union
 
-from mash_autoencoder.Model.ShapeVAE import ShapeVAE
-from mash_autoencoder.Model.MashVAE import MashVAE
+from mash_autoencoder.Model.shape_vae import ShapeVAE
+from mash_autoencoder.Model.mash_vae import MashVAE
 
 
 class Detector(object):
