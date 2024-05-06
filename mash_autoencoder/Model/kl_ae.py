@@ -21,7 +21,7 @@ class MashKLAutoEncoder(nn.Module):
         sh_degree: int = 2,
         d_hidden: int = 256,
         d_hidden_embed: int = 48,
-        d_latent=1,
+        d_latent=4,
         n_layer: int = 24,
         n_cross: int = 1,
         ssm_cfg=None,
@@ -137,9 +137,14 @@ class MashKLAutoEncoder(nn.Module):
         )
         return shape_embeddings
 
-    def encode(self, mash_params: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def encode(self, mash_params: torch.Tensor, drop_prob: float = 0.0) -> Tuple[torch.Tensor, torch.Tensor]:
         pose_embeddings = self.embedPose(mash_params[:, :, :6])
         shape_embeddings = self.embedShape(mash_params[:, :, 6:])
+
+        if drop_prob > 0.0:
+            mask = shape_embeddings.new_empty(*shape_embeddings.shape[:2])
+            mask = mask.bernoulli_(1 - drop_prob)
+            shape_embeddings = shape_embeddings * mask.unsqueeze(-1).expand_as(shape_embeddings).type(shape_embeddings.dtype)
 
         hidden_states = shape_embeddings
 
@@ -209,10 +214,10 @@ class MashKLAutoEncoder(nn.Module):
         mash_params = torch.cat([pose_params, shape_params], dim=2)
         return mash_params
 
-    def forward(self, data):
+    def forward(self, data, drop_prob: float = 0.0):
         mash_params = data['mash_params']
 
-        x, kl = self.encode(mash_params)
+        x, kl = self.encode(mash_params, drop_prob)
 
         output = self.decode(x, mash_params[:, :, :6])
 

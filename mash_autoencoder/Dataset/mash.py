@@ -101,8 +101,8 @@ class MashDataset(Dataset):
         sh_params = mash_params["sh_params"]
 
         if self.split == "train":
-            scale_range = [0.5, 2.0]
-            move_range = [-0.6, 0.6]
+            scale_range = [0.8, 1.2]
+            move_range = [-1.0, 1.0]
 
             random_scale = (
                 scale_range[0] + (scale_range[1] - scale_range[0]) * np.random.rand()

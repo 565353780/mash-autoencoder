@@ -6,11 +6,11 @@ from mash_autoencoder.Module.trainer import Trainer
 
 def demo():
     dataset_root_folder_path = "/home/chli/Dataset/"
-    batch_size = 100
+    batch_size = 64
     accum_iter = 1
     num_workers = 4
-    model_file_path = "./output/pretrain-S/model_last.pth"
-    #model_file_path = None
+    model_file_path = "./output/pretrain-4dim/model_last.pth"
+    # model_file_path = None
     dtype = torch.float32
     device = "cuda:0"
     warm_epoch_step_num = 100
@@ -21,6 +21,7 @@ def demo():
     factor = 0.99
     patience = 10000
     min_lr = 1e-6
+    drop_prob = 0.75
     save_result_folder_path = "auto"
     save_log_folder_path = "auto"
 
@@ -46,6 +47,7 @@ def demo():
         factor,
         patience,
         min_lr,
+        drop_prob,
         save_result_folder_path,
         save_log_folder_path,
     )

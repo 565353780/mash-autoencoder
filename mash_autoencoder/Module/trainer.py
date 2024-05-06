@@ -36,10 +36,11 @@ class Trainer(object):
         factor: float = 0.9,
         patience: int = 1,
         min_lr: float = 1e-4,
+        drop_prob: float = 0.75,
         save_result_folder_path: Union[str, None] = None,
         save_log_folder_path: Union[str, None] = None,
     ) -> None:
-        self.loss_kl_weight = 1e-6
+        self.loss_kl_weight = 0.0
 
         self.accum_iter = accum_iter
         self.dtype = dtype
@@ -60,6 +61,7 @@ class Trainer(object):
         self.factor = factor
         self.patience = patience
         self.min_lr = min_lr
+        self.drop_prob = drop_prob
 
         self.save_result_folder_path = save_result_folder_path
         self.save_log_folder_path = save_log_folder_path
@@ -147,7 +149,7 @@ class Trainer(object):
 
         gt_mash_params = data["mash_params"]
 
-        results = self.model(data)
+        results = self.model(data, self.drop_prob)
 
         mash_params = results['mash_params']
         kl = results['kl']
@@ -155,9 +157,9 @@ class Trainer(object):
         loss_mash_params = self.loss_fn(mash_params, gt_mash_params)
         loss_kl = torch.sum(kl) / kl.shape[0]
 
-        loss_kl = self.loss_kl_weight * loss_kl
+        weighted_loss_kl = self.loss_kl_weight * loss_kl
 
-        loss = loss_mash_params + loss_kl
+        loss = loss_mash_params + weighted_loss_kl
 
         accum_loss = loss / self.accum_iter
         accum_loss.backward()
@@ -198,9 +200,9 @@ class Trainer(object):
             loss_mash_params = self.loss_fn(mash_params, gt_mash_params)
             loss_kl = torch.sum(kl) / kl.shape[0]
 
-            loss_kl = self.loss_kl_weight * loss_kl
+            weighted_loss_kl = self.loss_kl_weight * loss_kl
 
-            loss = loss_mash_params + loss_kl
+            loss = loss_mash_params + weighted_loss_kl
 
             avg_loss_mash_params += loss_mash_params.item()
             avg_loss_kl += loss_kl.item()
