@@ -129,7 +129,7 @@ class MashVAE(nn.Module):
         mash_embeddings = torch.cat([rotation_embeddings, position_embeddings, mask_embeddings, sh_embeddings], dim=2)
         return mash_embeddings
 
-    def encode(self, mash_params: torch.Tensor, drop_prob: float = 0.0) -> Tuple[torch.Tensor, torch.Tensor]:
+    def encode(self, mash_params: torch.Tensor, drop_prob: float = 0.0, deterministic: bool=False) -> Tuple[torch.Tensor, torch.Tensor]:
         if drop_prob > 0.0:
             mask = mash_params.new_empty(*mash_params.shape[:2])
             mask = mask.bernoulli_(1 - drop_prob)
@@ -169,7 +169,7 @@ class MashVAE(nn.Module):
         mean = self.mean_fc(x)
         logvar = self.logvar_fc(x)
 
-        posterior = DiagonalGaussianDistribution(mean, logvar)
+        posterior = DiagonalGaussianDistribution(mean, logvar, deterministic)
         x = posterior.sample()
         kl = posterior.kl()
         return x, kl
@@ -203,10 +203,10 @@ class MashVAE(nn.Module):
         mash_params = self.to_outputs(latents)
         return mash_params
 
-    def forward(self, data, drop_prob: float = 0.0):
+    def forward(self, data, drop_prob: float = 0.0, deterministic: bool=False):
         mash_params = data['mash_params']
 
-        x, kl = self.encode(mash_params, drop_prob)
+        x, kl = self.encode(mash_params, drop_prob, deterministic)
 
         output = self.decode(x)
 

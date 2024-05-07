@@ -34,7 +34,40 @@ class Detector(object):
 
         self.model.load_state_dict(state_dict)
         self.model.eval()
+        print('[INFO][Detector::loadModel]')
+        print('\t load model success!')
+        print('\t model_file_path:', model_file_path)
         return True
+
+    @torch.no_grad()
+    def encodeFile(self, mash_params_file_path: str) -> Union[dict, None]:
+        if not os.path.exists(mash_params_file_path):
+            print("[ERROR][Detector::encodeFile]")
+            print("\t mash params file not exist!")
+            print("\t mash_params_file_path:", mash_params_file_path)
+            return None
+
+        mash_params = np.load(mash_params_file_path, allow_pickle=True).item()
+
+        rotate_vectors = mash_params["rotate_vectors"]
+        positions = mash_params["positions"]
+        mask_params = mash_params["mask_params"]
+        sh_params = mash_params["sh_params"]
+
+        mash_params = np.hstack(
+            [
+                rotate_vectors,
+                positions,
+                mask_params,
+                sh_params,
+            ]
+        )
+
+        gt_mash_params = torch.from_numpy(mash_params).unsqueeze(0).type(self.dtype).to(self.device)
+
+        x, kl = self.model.encode(gt_mash_params, 0.0, True)
+        results = {'x': x, 'kl': kl}
+        return results
 
     @torch.no_grad()
     def detectFile(self, mash_params_file_path: str) -> Union[dict, None]:
