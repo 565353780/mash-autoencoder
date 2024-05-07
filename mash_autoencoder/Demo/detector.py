@@ -15,7 +15,7 @@ from mash_autoencoder.Module.detector import Detector
 
 
 def demo():
-    model_file_path = "./output/20240506_23:48:52/model_best.pth"
+    model_file_path = "./output/20240507_12:30:15/model_best.pth"
     dtype = torch.float32
     device = "cuda:0"
 

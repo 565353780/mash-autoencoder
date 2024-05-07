@@ -9,8 +9,8 @@ def demo():
     batch_size = 96
     accum_iter = 1
     num_workers = 4
-    model_file_path = "./output/pretrain-4dim/model_last.pth"
-    model_file_path = None
+    model_file_path = "./output/pretrain-10dim/model_last.pth"
+    #model_file_path = None
     dtype = torch.float32
     device = "cuda:0"
     warm_epoch_step_num = 100
@@ -21,7 +21,7 @@ def demo():
     factor = 0.99
     patience = 10000
     min_lr = 1e-6
-    drop_prob = 0.75
+    drop_prob = 0.0
     save_result_folder_path = "auto"
     save_log_folder_path = "auto"
 
