@@ -6,7 +6,7 @@ from mash_autoencoder.Module.trainer import Trainer
 
 def demo():
     dataset_root_folder_path = "/home/chli/Dataset/"
-    batch_size = 8
+    batch_size = 256
     accum_iter = 1
     num_workers = 4
     model_file_path = "./output/pretrain-10dim-v3/model_last.pth"
@@ -16,7 +16,7 @@ def demo():
     warm_epoch_step_num = 100
     warm_epoch_num = 0
     finetune_step_num = 100000000
-    lr = 1e-5
+    lr = 1e-4
     weight_decay = 1e-10
     factor = 0.99
     patience = 10000

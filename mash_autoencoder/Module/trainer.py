@@ -16,6 +16,7 @@ from mash_autoencoder.Method.time import getCurrentTime
 from mash_autoencoder.Method.path import createFileFolder
 from mash_autoencoder.Model.shape_vae import ShapeVAE
 from mash_autoencoder.Model.mash_vae import MashVAE
+from mash_autoencoder.Model.vae_simple import VAE
 from mash_autoencoder.Module.logger import Logger
 
 
@@ -41,7 +42,7 @@ class Trainer(object):
         save_result_folder_path: Union[str, None] = None,
         save_log_folder_path: Union[str, None] = None,
     ) -> None:
-        self.loss_kl_weight = 1e-3
+        self.loss_kl_weight = 1.0
 
         self.accum_iter = accum_iter
         self.dtype = dtype
@@ -82,7 +83,8 @@ class Trainer(object):
             num_workers=num_workers,
         )
 
-        self.model = MashVAE(dtype=self.dtype, device=self.device).to(self.device)
+        #self.model = MashVAE(dtype=self.dtype, device=self.device).to(self.device)
+        self.model = VAE().to(self.device)
 
         self.loss_fn = nn.L1Loss()
 
@@ -193,7 +195,7 @@ class Trainer(object):
 
             gt_mash_params = data["mash_params"]
 
-            results = self.model(data)
+            results = self.model(data, deterministic=True)
 
             mash_params = results['mash_params']
             kl = results['kl']

@@ -77,7 +77,7 @@ class MashDataset(Dataset):
 
     def __len__(self):
         if self.split == "train":
-            return len(self.paths_list)
+            return len(self.paths_list) * 10
         else:
             return len(self.paths_list)
 
