@@ -17,8 +17,7 @@ class VAE(nn.Module):
         self.mask_dim = 2 * mask_degree + 1
         self.sh_dim = (sh_degree + 1) ** 2
 
-        encode_dims = [22, 512, 256, 128, 64, 32, 16, 8, 4, 2, 1]
-        encode_dims = [22, 22, 22, 22, 22, 22, 22, 22]
+        encode_dims = [22, 32, 64, 128, 256, 512, 256, 128, 64, 32, 16, 8, 4, 2, 1]
         d_latent = encode_dims[-1]
 
         self.encoder = nn.Sequential()

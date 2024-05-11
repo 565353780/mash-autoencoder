@@ -39,10 +39,13 @@ class Trainer(object):
         patience: int = 1,
         min_lr: float = 1e-4,
         drop_prob: float = 0.75,
+        deterministic: bool = False,
+        kl_weight: float = 1.0,
         save_result_folder_path: Union[str, None] = None,
         save_log_folder_path: Union[str, None] = None,
     ) -> None:
-        self.loss_kl_weight = 1.0
+        self.deterministic = deterministic
+        self.loss_kl_weight = kl_weight
 
         self.accum_iter = accum_iter
         self.dtype = dtype
@@ -83,8 +86,8 @@ class Trainer(object):
             num_workers=num_workers,
         )
 
-        #self.model = MashVAE(dtype=self.dtype, device=self.device).to(self.device)
-        self.model = VAE().to(self.device)
+        self.model = MashVAE(dtype=self.dtype, device=self.device).to(self.device)
+        #self.model = VAE().to(self.device)
 
         self.loss_fn = nn.L1Loss()
 
@@ -152,7 +155,7 @@ class Trainer(object):
 
         gt_mash_params = data["mash_params"]
 
-        results = self.model(data, self.drop_prob)
+        results = self.model(data, self.drop_prob, self.deterministic)
 
         mash_params = results['mash_params']
         kl = results['kl']
