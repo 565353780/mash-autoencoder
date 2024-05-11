@@ -8,7 +8,7 @@ class Convertor(object):
     def __init__(self, dataset_root_folder_path: str) -> None:
         self.dataset_root_folder_path = dataset_root_folder_path
 
-        self.mash_folder_path = self.dataset_root_folder_path + "MashV3/"
+        self.mash_folder_path = self.dataset_root_folder_path + "MashV4/"
         self.split_folder_path = self.dataset_root_folder_path + "SplitMashKLAutoEncoder/"
 
         assert os.path.exists(self.mash_folder_path)

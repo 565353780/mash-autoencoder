@@ -16,7 +16,7 @@ class MashDataset(Dataset):
         self.split = split
         self.preload_data = preload_data
 
-        self.mash_folder_path = self.dataset_root_folder_path + "MashV3/"
+        self.mash_folder_path = self.dataset_root_folder_path + "MashV4/"
         self.split_folder_path = self.dataset_root_folder_path + "SplitMashKLAutoEncoder/"
         assert os.path.exists(self.mash_folder_path)
         assert os.path.exists(self.split_folder_path)

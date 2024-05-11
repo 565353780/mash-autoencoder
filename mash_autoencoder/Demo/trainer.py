@@ -6,11 +6,11 @@ from mash_autoencoder.Module.trainer import Trainer
 
 def demo():
     dataset_root_folder_path = "/home/chli/Dataset/"
-    batch_size = 96
+    batch_size = 8
     accum_iter = 1
     num_workers = 4
-    model_file_path = "./output/pretrain-10dim/model_last.pth"
-    #model_file_path = None
+    model_file_path = "./output/pretrain-10dim-v3/model_last.pth"
+    model_file_path = None
     dtype = torch.float32
     device = "cuda:0"
     warm_epoch_step_num = 100
@@ -25,8 +25,8 @@ def demo():
     save_result_folder_path = "auto"
     save_log_folder_path = "auto"
 
-    train_scale = 0.9
-    val_scale = 0.1
+    train_scale = 0.95
+    val_scale = 0.05
 
     convertor = Convertor(dataset_root_folder_path)
     convertor.convertToSplitFiles(train_scale, val_scale)

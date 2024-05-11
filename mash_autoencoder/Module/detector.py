@@ -69,6 +69,10 @@ class Detector(object):
         results = {'x': x, 'kl': kl}
         return results
 
+    def decodeLatent(self, latent: torch.Tensor) -> torch.Tensor:
+        mash_params = self.model.decode(latent)
+        return mash_params
+
     @torch.no_grad()
     def detectFile(self, mash_params_file_path: str) -> Union[dict, None]:
         if not os.path.exists(mash_params_file_path):
