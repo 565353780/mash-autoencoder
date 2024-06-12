@@ -21,7 +21,7 @@ class MashVAE(nn.Module):
         sh_degree: int = 2,
         d_hidden: int = 512,
         d_hidden_embed: int = 48,
-        d_latent=2,
+        d_latent=22,
         n_layer: int = 48,
         n_cross: int = 1,
         ssm_cfg=None,
@@ -41,7 +41,7 @@ class MashVAE(nn.Module):
         self.mask_dim = 2 * mask_degree + 1
         self.sh_dim = (sh_degree + 1) ** 2
 
-        assert d_hidden % 2 == 0
+        assert d_hidden % 4 == 0
 
         self.rotation_embed = PointEmbed(3, d_hidden_embed, d_hidden // 4)
         self.position_embed = PointEmbed(3, d_hidden_embed, d_hidden // 4)
