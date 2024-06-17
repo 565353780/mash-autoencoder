@@ -16,8 +16,20 @@ class VAE(nn.Module):
         super().__init__()
         self.mask_dim = 2 * mask_degree + 1
         self.sh_dim = (sh_degree + 1) ** 2
+        self.mash_dim = 6 + self.mask_dim + self.sh_dim
 
-        encode_dims = [22, 32, 64, 128, 256, 512, 256, 128, 64, 32, 16, 8, 4, 2, 1]
+        encode_dims = [self.mash_dim]
+        start_dim = 32
+        multi_num = 9
+        current_dim = start_dim // 2
+        for i in range(multi_num):
+            current_dim *= 2
+            encode_dims.append(current_dim)
+        for i in range(multi_num-1):
+            current_dim //= 2
+            encode_dims.append(current_dim)
+        encode_dims.append(self.mash_dim)
+
         d_latent = encode_dims[-1]
 
         self.encoder = nn.Sequential()

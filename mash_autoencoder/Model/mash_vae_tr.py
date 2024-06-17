@@ -25,7 +25,7 @@ class KLAutoEncoder(nn.Module):
         d_latent=22,
         heads=8,
         dim_head=64,
-        weight_tie_layers=True,
+        weight_tie_layers=False,
         decoder_ff=True,
     ):
         super().__init__()
