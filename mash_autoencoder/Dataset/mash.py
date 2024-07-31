@@ -100,9 +100,9 @@ class MashDataset(Dataset):
         mask_params = mash_params["mask_params"]
         sh_params = mash_params["sh_params"]
 
-        if self.split == "train" and False:
-            scale_range = [0.9, 1.1]
-            move_range = [-0.1, 0.1]
+        if self.split == "train":
+            scale_range = [0.8, 1.2]
+            move_range = [-0.5, 0.5]
 
             random_scale = (
                 scale_range[0] + (scale_range[1] - scale_range[0]) * np.random.rand()
@@ -113,8 +113,8 @@ class MashDataset(Dataset):
 
             mash_params = np.hstack(
                 [
-                    rotate_vectors,
                     positions * random_scale + random_translate,
+                    rotate_vectors,
                     mask_params,
                     sh_params * random_scale,
                 ]
@@ -122,8 +122,8 @@ class MashDataset(Dataset):
         else:
             mash_params = np.hstack(
                 [
-                    rotate_vectors,
                     positions,
+                    rotate_vectors,
                     mask_params,
                     sh_params,
                 ]

@@ -141,14 +141,13 @@ class ShapeVAE(nn.Module):
         pose_params = mash_params[:, :, :6]
         shape_params = mash_params[:, :, 6:]
 
-        pose_embeddings = self.embedPose(pose_params)
-        shape_embeddings = self.embedShape(shape_params)
-
         if drop_prob > 0.0:
             mask = shape_params.new_empty(*shape_params.shape[:2])
             mask = mask.bernoulli_(1 - drop_prob)
             shape_params = shape_params * mask.unsqueeze(-1).expand_as(shape_params).type(shape_params.dtype)
 
+        pose_embeddings = self.embedPose(pose_params)
+        shape_embeddings = self.embedShape(shape_params)
 
         hidden_states = shape_embeddings
 
