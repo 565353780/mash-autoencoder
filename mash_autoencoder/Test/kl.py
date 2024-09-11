@@ -16,5 +16,5 @@ def test():
         postier = DiagonalGaussianDistribution(mean, std)
         kl = postier.kl()
         print(kl)
-        exit()
+        break
     return True
