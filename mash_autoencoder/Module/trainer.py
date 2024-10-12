@@ -18,7 +18,8 @@ from mash_autoencoder.Method.path import createFileFolder
 # from mash_autoencoder.Model.mash_vae import MashVAE
 # from mash_autoencoder.Model.vae_simple import VAE
 # from mash_autoencoder.Model.mash_vae_tr import KLAutoEncoder
-from mash_autoencoder.Model.shape_vae_v2 import ShapeVAE
+# from mash_autoencoder.Model.shape_vae_v2 import ShapeVAE
+from mash_autoencoder.Model.ptv3_shape_vae import PTV3ShapeVAE
 from mash_autoencoder.Module.logger import Logger
 
 
@@ -88,7 +89,7 @@ class Trainer(object):
             num_workers=num_workers,
         )
 
-        model_id = 4
+        model_id = 5
         if model_id == 1:
             self.model = MashVAE(dtype=self.dtype, device=self.device).to(self.device)
         elif model_id == 2:
@@ -97,6 +98,8 @@ class Trainer(object):
             self.model = KLAutoEncoder().to(self.device)
         elif model_id == 4:
             self.model = ShapeVAE().to(self.device)
+        elif model_id == 5:
+            self.model = PTV3ShapeVAE().to(self.device)
 
         self.loss_fn = nn.L1Loss()
 
