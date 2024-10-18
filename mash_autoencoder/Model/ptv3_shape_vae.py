@@ -52,7 +52,7 @@ class PTV3ShapeVAE(nn.Module):
         input_dict = {
             'coord': positions.reshape(-1, 3),
             'feat': position_embeddings.reshape(-1, self.embedding.embedding_dim),
-            'batch': torch.cat([torch.ones(positions.shape[1], dtype=torch.long, device='cuda') * i for i in range(positions.shape[0])]),
+            'batch': torch.cat([torch.ones(positions.shape[1], dtype=torch.long, device=positions.device) * i for i in range(positions.shape[0])]),
             'grid_size': 0.1,
         }
 

@@ -61,28 +61,15 @@ class Detector(object):
         mash_params = np.load(mash_params_file_path, allow_pickle=True).item()
 
         positions = mash_params["positions"]
-        rotate_vectors = mash_params["rotate_vectors"]
-        mask_params = mash_params["mask_params"]
-        sh_params = mash_params["sh_params"]
+        positions_tensor = torch.from_numpy(positions).unsqueeze(0).type(self.dtype).to(self.device)
 
-        mash_params = np.hstack(
-            [
-                positions,
-                rotate_vectors,
-                mask_params,
-                sh_params,
-            ]
-        )
-
-        gt_mash_params = torch.from_numpy(mash_params).unsqueeze(0).type(self.dtype).to(self.device)
-
-        x, kl = self.model.encode(gt_mash_params, 0.0, True)
+        x, kl = self.model.encode(positions_tensor, 0.0, True)
         results = {'x': x, 'kl': kl}
         return results
 
-    def decodeLatent(self, latent: torch.Tensor) -> torch.Tensor:
-        mash_params = self.model.decode(latent)
-        return mash_params
+    def decodeLatent(self, latent: torch.Tensor) -> dict:
+        mash_params_dict = self.model.decode(latent)
+        return mash_params_dict
 
     @torch.no_grad()
     def detectFile(self, mash_params_file_path: str) -> Union[dict, None]:
@@ -95,24 +82,11 @@ class Detector(object):
         mash_params = np.load(mash_params_file_path, allow_pickle=True).item()
 
         positions = mash_params["positions"]
-        rotate_vectors = mash_params["rotate_vectors"]
-        mask_params = mash_params["mask_params"]
-        sh_params = mash_params["sh_params"]
+        positions_tensor = torch.from_numpy(positions).unsqueeze(0).type(self.dtype).to(self.device)
 
-        mash_params = np.hstack(
-            [
-                positions,
-                rotate_vectors,
-                mask_params,
-                sh_params,
-            ]
-        )
-
-        gt_mash_params = torch.from_numpy(mash_params).unsqueeze(0).type(self.dtype).to(self.device)
-
-        data = {
-            'mash_params': gt_mash_params
-        }
+        data = {'positions': positions_tensor}
 
         results = self.model(data)
+
+        results['mash_params_dict']['positions'] = positions_tensor
         return results

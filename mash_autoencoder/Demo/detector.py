@@ -15,7 +15,7 @@ from mash_autoencoder.Module.detector import Detector
 
 
 def demo():
-    model_file_path = "./output/ptv3-v1-2/model_last.pth"
+    model_file_path = "./output/20241018_20:29:53/model_last.pth"
     dtype = torch.float32
     device = "cuda:0"
 
@@ -36,15 +36,14 @@ def demo():
             print("start export mesh", i + 1, "...")
             results = detector.detectFile(mash_params_file_path)
             assert results is not None
-            mash_params = results['mash_params'][0]
+            mash_params_dict = results['mash_params_dict']
             kl = results['kl'][0]
             print("kl:", kl)
 
-            sh2d = 7
-            positions = mash_params[:, :3]
-            rotate_vectors = mash_params[:, 3:6]
-            mask_params = mash_params[:, 6:6+sh2d]
-            sh_params = mash_params[:, 6+sh2d:]
+            rotate_vectors = mash_params_dict['rotate_vectors'][0]
+            positions = mash_params_dict['positions'][0]
+            mask_params = mash_params_dict['mask_params'][0]
+            sh_params = mash_params_dict['sh_params'][0]
 
             mash = Mash(
                 anchor_num=400,
@@ -63,7 +62,6 @@ def demo():
             )
 
         if True:
-            sh2d = 7
             gt_mash = Mash.fromParamsFile(mash_params_file_path, device=device)
             gt_mash_pcd = getPointCloud(toNumpy(torch.vstack(gt_mash.toSamplePoints()[:2])))
             o3d.io.write_point_cloud(
