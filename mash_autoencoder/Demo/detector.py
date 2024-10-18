@@ -15,7 +15,7 @@ from mash_autoencoder.Module.detector import Detector
 
 
 def demo():
-    model_file_path = "./output/20240613_00:23:11/model_last.pth"
+    model_file_path = "./output/ptv3-v1-2/model_last.pth"
     dtype = torch.float32
     device = "cuda:0"
 
@@ -41,8 +41,8 @@ def demo():
             print("kl:", kl)
 
             sh2d = 7
-            rotate_vectors = mash_params[:, :3]
-            positions = mash_params[:, 3:6]
+            positions = mash_params[:, :3]
+            rotate_vectors = mash_params[:, 3:6]
             mask_params = mash_params[:, 6:6+sh2d]
             sh_params = mash_params[:, 6+sh2d:]
 
@@ -70,6 +70,6 @@ def demo():
                 "./output/test_gt_mash_pcd" + str(i) + ".ply", gt_mash_pcd, write_ascii=True
             )
 
-        if True:
+        if False:
             copyfile(gt_mesh_file_path, "./output/test_mash_mesh_gt" + str(i) + ".obj")
     return True

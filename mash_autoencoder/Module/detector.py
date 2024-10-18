@@ -3,10 +3,11 @@ import torch
 import numpy as np
 from typing import Union
 
-from mash_autoencoder.Model.shape_vae import ShapeVAE
-from mash_autoencoder.Model.mash_vae import MashVAE
-from mash_autoencoder.Model.vae_simple import VAE
-from mash_autoencoder.Model.mash_vae_tr import KLAutoEncoder
+# from mash_autoencoder.Model.shape_vae import ShapeVAE
+# from mash_autoencoder.Model.mash_vae import MashVAE
+# from mash_autoencoder.Model.vae_simple import VAE
+# from mash_autoencoder.Model.mash_vae_tr import KLAutoEncoder
+from mash_autoencoder.Model.ptv3_shape_vae import PTV3ShapeVAE
 
 
 class Detector(object):
@@ -19,13 +20,15 @@ class Detector(object):
         self.dtype = dtype
         self.device = device
 
-        model_id = 3
+        model_id = 4
         if model_id == 1:
             self.model = MashVAE(dtype=self.dtype, device=self.device).to(self.device)
         elif model_id == 2:
             self.model = VAE().to(self.device)
         elif model_id == 3:
             self.model = KLAutoEncoder().to(self.device)
+        elif model_id == 4:
+            self.model = PTV3ShapeVAE().to(self.device)
 
         if model_file_path is not None:
             self.loadModel(model_file_path)
@@ -57,15 +60,15 @@ class Detector(object):
 
         mash_params = np.load(mash_params_file_path, allow_pickle=True).item()
 
-        rotate_vectors = mash_params["rotate_vectors"]
         positions = mash_params["positions"]
+        rotate_vectors = mash_params["rotate_vectors"]
         mask_params = mash_params["mask_params"]
         sh_params = mash_params["sh_params"]
 
         mash_params = np.hstack(
             [
-                rotate_vectors,
                 positions,
+                rotate_vectors,
                 mask_params,
                 sh_params,
             ]
@@ -91,15 +94,15 @@ class Detector(object):
 
         mash_params = np.load(mash_params_file_path, allow_pickle=True).item()
 
-        rotate_vectors = mash_params["rotate_vectors"]
         positions = mash_params["positions"]
+        rotate_vectors = mash_params["rotate_vectors"]
         mask_params = mash_params["mask_params"]
         sh_params = mash_params["sh_params"]
 
         mash_params = np.hstack(
             [
-                rotate_vectors,
                 positions,
+                rotate_vectors,
                 mask_params,
                 sh_params,
             ]

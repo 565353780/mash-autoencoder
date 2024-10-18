@@ -9,14 +9,14 @@ def demo():
     batch_size = 256
     accum_iter = 1
     num_workers = 4
-    model_file_path = "./output/pretrain-10dim-v3/model_last.pth"
-    model_file_path = None
+    model_file_path = "./output/ptv3-v1-1/model_best.pth"
+    # model_file_path = None
     dtype = torch.float32
     device = "cuda:0"
     warm_epoch_step_num = 100
     warm_epoch_num = 0
     finetune_step_num = 100000000
-    lr = 1e-4
+    lr = 1e-5
     weight_decay = 1e-10
     factor = 0.99
     patience = 10000

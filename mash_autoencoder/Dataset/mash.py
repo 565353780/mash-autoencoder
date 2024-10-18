@@ -81,7 +81,7 @@ class MashDataset(Dataset):
         else:
             return len(self.paths_list)
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int):
         index = index % len(self.paths_list)
 
         if self.split == "train":
