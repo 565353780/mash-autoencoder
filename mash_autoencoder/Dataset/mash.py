@@ -111,28 +111,21 @@ class MashDataset(Dataset):
                 move_range[1] - move_range[0]
             ) * np.random.rand(3)
 
-            mash_params = np.hstack(
-                [
-                    positions * random_scale + random_translate,
-                    rotate_vectors,
-                    mask_params,
-                    sh_params * random_scale,
-                ]
-            )
-        else:
-            mash_params = np.hstack(
-                [
-                    positions,
-                    rotate_vectors,
-                    mask_params,
-                    sh_params,
-                ]
-            )
+            positions = positions * random_scale + random_translate
+            sh_params = sh_params * random_scale
 
-        mash_params = mash_params[np.random.permutation(mash_params.shape[0])]
+        permute_idxs = np.random.permutation(rotate_vectors.shape[0])
+
+        rotate_vectors = rotate_vectors[permute_idxs]
+        positions = positions[permute_idxs]
+        mask_params = mask_params[permute_idxs]
+        sh_params = sh_params[permute_idxs]
 
         feed_dict = {
-            "mash_params": torch.tensor(mash_params).float(),
+            "rotate_vectors": torch.tensor(rotate_vectors).float(),
+            "positions": torch.tensor(positions).float(),
+            "mask_params": torch.tensor(mask_params).float(),
+            "sh_params": torch.tensor(sh_params).float(),
         }
 
         return feed_dict

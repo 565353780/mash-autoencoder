@@ -16,14 +16,12 @@ class PTV3ShapeVAE(nn.Module):
     def __init__(self,
                  mask_degree: int = 3,
                  sh_degree: int = 2,
-                 latent_dim: int = 64,
-                 positional_embedding_dim: int = 48) -> None:
+                 latent_dim: int = 512,
+                 positional_embedding_dim: int = 256) -> None:
         super().__init__()
 
         mask_dim = 2 * mask_degree + 1
         sh_dim = (sh_degree + 1) ** 2
-
-        output_dim = 3 + mask_dim + sh_dim
 
         ptv3_output_dim = 64
 
@@ -36,7 +34,11 @@ class PTV3ShapeVAE(nn.Module):
 
         self.proj = nn.Linear(latent_dim, ptv3_output_dim)
 
-        self.shape_decoder = nn.Linear(ptv3_output_dim, output_dim)
+        self.rotate_vectors_decoder = nn.Linear(ptv3_output_dim, 3)
+
+        self.mask_params_decoder = nn.Linear(ptv3_output_dim, mask_dim)
+
+        self.sh_params_decoder = nn.Linear(ptv3_output_dim, sh_dim)
         return
 
     def encode(self, positions: torch.Tensor, drop_prob: float = 0.0, deterministic: bool=False) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -51,7 +53,7 @@ class PTV3ShapeVAE(nn.Module):
             'coord': positions.reshape(-1, 3),
             'feat': position_embeddings.reshape(-1, self.embedding.embedding_dim),
             'batch': torch.cat([torch.ones(positions.shape[1], dtype=torch.long, device='cuda') * i for i in range(positions.shape[0])]),
-            'grid_size': 0.01,
+            'grid_size': 0.1,
         }
 
         points = self.feature_encoder(input_dict)
@@ -67,20 +69,25 @@ class PTV3ShapeVAE(nn.Module):
 
         return x, kl
 
-    def decode(self, x, positions):
+    def decode(self, x):
         x = self.proj(x)
 
-        shape_params = self.shape_decoder(x)
+        rotate_vectors = self.rotate_vectors_decoder(x)
+        mask_params = self.mask_params_decoder(x)
+        sh_params = self.sh_params_decoder(x)
 
-        predict_mash_params = torch.cat([positions, shape_params], dim=2)
-        return predict_mash_params
+        mash_dict = {
+            'rotate_vectors': rotate_vectors,
+            'mask_params': mask_params,
+            'sh_params': sh_params,
+        }
+        return mash_dict
 
     def forward(self, data, drop_prob: float = 0.0, deterministic: bool=False):
-        mash_params = data['mash_params']
-        positions = mash_params[:, :, :3]
+        positions = data['positions']
 
         x, kl = self.encode(positions, drop_prob, deterministic)
 
-        output = self.decode(x, positions)
+        output = self.decode(x)
 
-        return {"mash_params": output, "kl": kl}
+        return {"mash_params_dict": output, "kl": kl}
