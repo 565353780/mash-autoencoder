@@ -8,6 +8,7 @@ from typing import Union
 # from mash_autoencoder.Model.vae_simple import VAE
 # from mash_autoencoder.Model.mash_vae_tr import KLAutoEncoder
 from mash_autoencoder.Model.ptv3_shape_vae import PTV3ShapeVAE
+from mash_autoencoder.Model.ptv3_shape_decoder import PTV3ShapeDecoder
 
 
 class Detector(object):
@@ -20,7 +21,7 @@ class Detector(object):
         self.dtype = dtype
         self.device = device
 
-        model_id = 4
+        model_id = 5
         if model_id == 1:
             self.model = MashVAE(dtype=self.dtype, device=self.device).to(self.device)
         elif model_id == 2:
@@ -29,6 +30,8 @@ class Detector(object):
             self.model = KLAutoEncoder().to(self.device)
         elif model_id == 4:
             self.model = PTV3ShapeVAE().to(self.device)
+        elif model_id == 5:
+            self.model = PTV3ShapeDecoder().to(self.device)
 
         if model_file_path is not None:
             self.loadModel(model_file_path)

@@ -15,7 +15,7 @@ from mash_autoencoder.Module.detector import Detector
 
 
 def demo():
-    model_file_path = "./output/20241018_20:29:53/model_last.pth"
+    model_file_path = "./output/20241018_23:47:48/model_last.pth"
     dtype = torch.float32
     device = "cuda:0"
 
@@ -37,8 +37,9 @@ def demo():
             results = detector.detectFile(mash_params_file_path)
             assert results is not None
             mash_params_dict = results['mash_params_dict']
-            kl = results['kl'][0]
-            print("kl:", kl)
+            if 'kl' in results.keys():
+                kl = results['kl'][0]
+                print("kl:", kl)
 
             rotate_vectors = mash_params_dict['rotate_vectors'][0]
             positions = mash_params_dict['positions'][0]

@@ -27,18 +27,48 @@ class PTV3ShapeVAE(nn.Module):
 
         self.embedding = PointEmbed(hidden_dim=positional_embedding_dim, dim=1)
 
-        self.feature_encoder = PointTransformerV3(self.embedding.embedding_dim)
+        self.feature_encoder = PointTransformerV3(
+            in_channels=self.embedding.embedding_dim,
+            order=("z", "z-trans", "hilbert", "hilbert-trans"),
+            enc_patch_size=(1024, 1024, 1024, 1024, 1024),
+            dec_patch_size=(1024, 1024, 1024, 1024),
+        )
 
-        self.mean_fc = nn.Linear(ptv3_output_dim, latent_dim)
-        self.logvar_fc = nn.Linear(ptv3_output_dim, latent_dim)
+        self.mean_fc = nn.Sequential(
+            nn.Linear(ptv3_output_dim, latent_dim // 2),
+            nn.Linear(latent_dim // 2, latent_dim // 2),
+            nn.Linear(latent_dim // 2, latent_dim),
+        )
 
-        self.proj = nn.Linear(latent_dim, ptv3_output_dim)
+        self.logvar_fc = nn.Sequential(
+            nn.Linear(ptv3_output_dim, latent_dim // 2),
+            nn.Linear(latent_dim // 2, latent_dim // 2),
+            nn.Linear(latent_dim // 2, latent_dim),
+        )
 
-        self.rotate_vectors_decoder = nn.Linear(ptv3_output_dim, 3)
+        self.proj = nn.Sequential(
+            nn.Linear(latent_dim, latent_dim // 2),
+            nn.Linear(latent_dim // 2, latent_dim // 2),
+            nn.Linear(latent_dim // 2, ptv3_output_dim),
+        )
 
-        self.mask_params_decoder = nn.Linear(ptv3_output_dim, mask_dim)
+        self.rotate_vectors_decoder = nn.Sequential(
+            nn.Linear(ptv3_output_dim, ptv3_output_dim // 2),
+            nn.Linear(ptv3_output_dim // 2, ptv3_output_dim // 2),
+            nn.Linear(ptv3_output_dim // 2, 3),
+        )
 
-        self.sh_params_decoder = nn.Linear(ptv3_output_dim, sh_dim)
+        self.mask_params_decoder = nn.Sequential(
+            nn.Linear(ptv3_output_dim, ptv3_output_dim // 2),
+            nn.Linear(ptv3_output_dim // 2, ptv3_output_dim // 2),
+            nn.Linear(ptv3_output_dim // 2, mask_dim),
+        )
+
+        self.sh_params_decoder = nn.Sequential(
+            nn.Linear(ptv3_output_dim, ptv3_output_dim // 2),
+            nn.Linear(ptv3_output_dim // 2, ptv3_output_dim // 2),
+            nn.Linear(ptv3_output_dim // 2, sh_dim),
+        )
         return
 
     def encode(self, positions: torch.Tensor, drop_prob: float = 0.0, deterministic: bool=False) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -53,7 +83,7 @@ class PTV3ShapeVAE(nn.Module):
             'coord': positions.reshape(-1, 3),
             'feat': position_embeddings.reshape(-1, self.embedding.embedding_dim),
             'batch': torch.cat([torch.ones(positions.shape[1], dtype=torch.long, device=positions.device) * i for i in range(positions.shape[0])]),
-            'grid_size': 0.1,
+            'grid_size': 0.01,
         }
 
         points = self.feature_encoder(input_dict)

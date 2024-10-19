@@ -20,6 +20,7 @@ from mash_autoencoder.Method.path import createFileFolder
 # from mash_autoencoder.Model.mash_vae_tr import KLAutoEncoder
 # from mash_autoencoder.Model.shape_vae_v2 import ShapeVAE
 from mash_autoencoder.Model.ptv3_shape_vae import PTV3ShapeVAE
+from mash_autoencoder.Model.ptv3_shape_decoder import PTV3ShapeDecoder
 from mash_autoencoder.Module.logger import Logger
 
 
@@ -49,6 +50,10 @@ class Trainer(object):
     ) -> None:
         self.deterministic = deterministic
         self.loss_kl_weight = kl_weight
+
+        self.loss_rotate_vectors_weight = 1.0
+        self.loss_mask_params_weight = 1.0
+        self.loss_sh_params_weight = 10.0
 
         self.accum_iter = accum_iter
         self.dtype = dtype
@@ -89,7 +94,7 @@ class Trainer(object):
             num_workers=num_workers,
         )
 
-        model_id = 5
+        model_id = 6
         if model_id == 1:
             self.model = MashVAE(dtype=self.dtype, device=self.device).to(self.device)
         elif model_id == 2:
@@ -100,6 +105,8 @@ class Trainer(object):
             self.model = ShapeVAE().to(self.device)
         elif model_id == 5:
             self.model = PTV3ShapeVAE().to(self.device)
+        elif model_id == 6:
+            self.model = PTV3ShapeDecoder().to(self.device)
 
         self.loss_fn = nn.L1Loss()
 
@@ -172,7 +179,6 @@ class Trainer(object):
         results = self.model(data, self.drop_prob, self.deterministic)
 
         mash_params_dict = results['mash_params_dict']
-        kl = results['kl']
 
         rotate_vectors = mash_params_dict['rotate_vectors']
         mask_params = mash_params_dict['mask_params']
@@ -181,11 +187,19 @@ class Trainer(object):
         loss_rotate_vectors = self.loss_fn(rotate_vectors, gt_rotate_vectors)
         loss_mask_params = self.loss_fn(mask_params, gt_mask_params)
         loss_sh_params = self.loss_fn(sh_params, gt_sh_params)
-        loss_kl = torch.sum(kl) / kl.shape[0]
 
-        weighted_loss_kl = self.loss_kl_weight * loss_kl
+        weighted_loss_rotate_vectors = self.loss_rotate_vectors_weight * loss_rotate_vectors
+        weighted_loss_mask_params = self.loss_mask_params_weight * loss_mask_params
+        weighted_loss_sh_params = self.loss_sh_params_weight * loss_sh_params
 
-        loss = loss_rotate_vectors + loss_mask_params + loss_sh_params + weighted_loss_kl
+        loss_kl = 0.0
+        weighted_loss_kl = 0.0
+        if 'kl' in results.keys():
+            kl = results['kl']
+            loss_kl = torch.sum(kl) / kl.shape[0]
+            weighted_loss_kl = self.loss_kl_weight * loss_kl
+
+        loss = weighted_loss_rotate_vectors + weighted_loss_mask_params + weighted_loss_sh_params + weighted_loss_kl
 
         accum_loss = loss / self.accum_iter
         accum_loss.backward()
@@ -198,7 +212,7 @@ class Trainer(object):
             "LossRotateVectors": loss_rotate_vectors.item(),
             "LossMaskParams": loss_mask_params.item(),
             "LossSHParams": loss_sh_params.item(),
-            "LossKL": loss_kl.item(),
+            "LossKL": loss_kl.item() if 'kl' in results.keys() else 0.0,
             "Loss": loss.item(),
         }
 
@@ -227,7 +241,6 @@ class Trainer(object):
             results = self.model(data, deterministic=True)
 
             mash_params_dict = results['mash_params_dict']
-            kl = results['kl']
 
             rotate_vectors = mash_params_dict['rotate_vectors']
             mask_params = mash_params_dict['mask_params']
@@ -236,16 +249,20 @@ class Trainer(object):
             loss_rotate_vectors = self.loss_fn(rotate_vectors, gt_rotate_vectors)
             loss_mask_params = self.loss_fn(mask_params, gt_mask_params)
             loss_sh_params = self.loss_fn(sh_params, gt_sh_params)
-            loss_kl = torch.sum(kl) / kl.shape[0]
 
-            weighted_loss_kl = self.loss_kl_weight * loss_kl
+            loss_kl = 0.0
+            weighted_loss_kl = 0.0
+            if 'kl' in results.keys():
+                kl = results['kl']
+                loss_kl = torch.sum(kl) / kl.shape[0]
+                weighted_loss_kl = self.loss_kl_weight * loss_kl
 
             loss = loss_rotate_vectors + loss_mask_params + loss_sh_params + weighted_loss_kl
 
             avg_loss_rotate_vectors += loss_rotate_vectors.item()
             avg_loss_mask_params += loss_mask_params.item()
             avg_loss_sh_params += loss_sh_params.item()
-            avg_loss_kl += loss_kl.item()
+            avg_loss_kl += loss_kl.item() if 'kl' in results.keys() else 0.0
             avg_loss += loss.item()
 
             ni += 1
