@@ -54,7 +54,7 @@ class Trainer(object):
         self.loss_rotate_vectors_weight = 1.0
         self.loss_positions_weight = 1.0
         self.loss_mask_params_weight = 1.0
-        self.loss_sh_params_weight = 10.0
+        self.loss_sh_params_weight = 1.0
 
         self.accum_iter = accum_iter
         self.dtype = dtype
