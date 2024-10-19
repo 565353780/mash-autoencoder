@@ -90,7 +90,8 @@ class PTV3ShapeDecoder(nn.Module):
         x = points.feat.reshape(surface_points.shape[0], surface_points.shape[1], -1)
 
         rotate_vectors = self.rotate_vectors_decoder(x)
-        positions = self.positions_decoder(x)
+        delta_positions = self.positions_decoder(x)
+        positions = surface_points + delta_positions
         mask_params = self.mask_params_decoder(x)
         sh_params = self.sh_params_decoder(x)
 
