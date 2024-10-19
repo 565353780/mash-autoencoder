@@ -52,6 +52,7 @@ class Trainer(object):
         self.loss_kl_weight = kl_weight
 
         self.loss_rotate_vectors_weight = 1.0
+        self.loss_positions_weight = 1.0
         self.loss_mask_params_weight = 1.0
         self.loss_sh_params_weight = 10.0
 
@@ -173,6 +174,7 @@ class Trainer(object):
             data[key] = data[key].to(self.device)
 
         gt_rotate_vectors = data["rotate_vectors"]
+        gt_positions = data["positions"]
         gt_mask_params = data["mask_params"]
         gt_sh_params = data["sh_params"]
 
@@ -181,14 +183,17 @@ class Trainer(object):
         mash_params_dict = results['mash_params_dict']
 
         rotate_vectors = mash_params_dict['rotate_vectors']
+        positions = mash_params_dict['positions']
         mask_params = mash_params_dict['mask_params']
         sh_params = mash_params_dict['sh_params']
 
         loss_rotate_vectors = self.loss_fn(rotate_vectors, gt_rotate_vectors)
+        loss_positions = self.loss_fn(positions, gt_positions)
         loss_mask_params = self.loss_fn(mask_params, gt_mask_params)
         loss_sh_params = self.loss_fn(sh_params, gt_sh_params)
 
         weighted_loss_rotate_vectors = self.loss_rotate_vectors_weight * loss_rotate_vectors
+        weighted_loss_positions = self.loss_positions_weight * loss_positions
         weighted_loss_mask_params = self.loss_mask_params_weight * loss_mask_params
         weighted_loss_sh_params = self.loss_sh_params_weight * loss_sh_params
 
@@ -199,7 +204,7 @@ class Trainer(object):
             loss_kl = torch.sum(kl) / kl.shape[0]
             weighted_loss_kl = self.loss_kl_weight * loss_kl
 
-        loss = weighted_loss_rotate_vectors + weighted_loss_mask_params + weighted_loss_sh_params + weighted_loss_kl
+        loss = weighted_loss_rotate_vectors + weighted_loss_positions + weighted_loss_mask_params + weighted_loss_sh_params + weighted_loss_kl
 
         accum_loss = loss / self.accum_iter
         accum_loss.backward()
@@ -210,6 +215,7 @@ class Trainer(object):
 
         loss_dict = {
             "LossRotateVectors": loss_rotate_vectors.item(),
+            "LossPositions": loss_positions.item(),
             "LossMaskParams": loss_mask_params.item(),
             "LossSHParams": loss_sh_params.item(),
             "LossKL": loss_kl.item() if 'kl' in results.keys() else 0.0,
@@ -222,6 +228,7 @@ class Trainer(object):
     def valStep(self) -> dict:
         avg_loss = 0
         avg_loss_rotate_vectors = 0
+        avg_loss_positions = 0
         avg_loss_mask_params = 0
         avg_loss_sh_params = 0
         avg_loss_kl = 0
@@ -235,6 +242,7 @@ class Trainer(object):
                 data[key] = data[key].to(self.device)
 
             gt_rotate_vectors = data["rotate_vectors"]
+            gt_positions = data["positions"]
             gt_mask_params = data["mask_params"]
             gt_sh_params = data["sh_params"]
 
@@ -243,23 +251,24 @@ class Trainer(object):
             mash_params_dict = results['mash_params_dict']
 
             rotate_vectors = mash_params_dict['rotate_vectors']
+            positions = mash_params_dict['positions']
             mask_params = mash_params_dict['mask_params']
             sh_params = mash_params_dict['sh_params']
 
             loss_rotate_vectors = self.loss_fn(rotate_vectors, gt_rotate_vectors)
+            loss_positions = self.loss_fn(positions, gt_positions)
             loss_mask_params = self.loss_fn(mask_params, gt_mask_params)
             loss_sh_params = self.loss_fn(sh_params, gt_sh_params)
 
             loss_kl = 0.0
-            weighted_loss_kl = 0.0
             if 'kl' in results.keys():
                 kl = results['kl']
                 loss_kl = torch.sum(kl) / kl.shape[0]
-                weighted_loss_kl = self.loss_kl_weight * loss_kl
 
-            loss = loss_rotate_vectors + loss_mask_params + loss_sh_params + weighted_loss_kl
+            loss = loss_rotate_vectors + loss_positions + loss_mask_params + loss_sh_params + loss_kl
 
             avg_loss_rotate_vectors += loss_rotate_vectors.item()
+            avg_loss_positions += loss_positions.item()
             avg_loss_mask_params += loss_mask_params.item()
             avg_loss_sh_params += loss_sh_params.item()
             avg_loss_kl += loss_kl.item() if 'kl' in results.keys() else 0.0
@@ -269,6 +278,7 @@ class Trainer(object):
 
         avg_loss /= ni
         avg_loss_rotate_vectors /= ni
+        avg_loss_positions /= ni
         avg_loss_mask_params /= ni
         avg_loss_sh_params /= ni
         avg_loss_kl /= ni
@@ -276,6 +286,7 @@ class Trainer(object):
 
         loss_dict = {
             "LossRotateVectors": avg_loss_rotate_vectors,
+            "LossPositions": avg_loss_positions,
             "LossMaskParams": avg_loss_mask_params,
             "LossSHParams": avg_loss_sh_params,
             "LossKL": avg_loss_kl,
@@ -367,13 +378,15 @@ class Trainer(object):
                         self.logger.addScalar("Eval/" + key, item, self.step)
 
                 print(
-                    " loss rotate vectors:",
+                    "[LOSS] rotate vectors:",
                     eval_loss_dict["LossRotateVectors"],
-                    " loss mask params:",
+                    " positions:",
+                    eval_loss_dict["LossPositions"],
+                    " mask params:",
                     eval_loss_dict["LossMaskParams"],
-                    " loss sh params:",
+                    " sh params:",
                     eval_loss_dict["LossSHParams"],
-                    " loss kl:",
+                    " kl:",
                     eval_loss_dict["LossKL"],
                     " loss:",
                     eval_loss_dict["Loss"],

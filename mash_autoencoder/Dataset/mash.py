@@ -1,8 +1,13 @@
+import sys
+sys.path.append('../ma-sh/')
+
 import os
 import torch
 import numpy as np
 from tqdm import tqdm
 from torch.utils.data import Dataset
+
+from ma_sh.Model.mash import Mash
 
 
 class MashDataset(Dataset):
@@ -121,7 +126,13 @@ class MashDataset(Dataset):
         mask_params = mask_params[permute_idxs]
         sh_params = sh_params[permute_idxs]
 
+        mash = Mash(400, 3, 2, 0, 1, 1.0, True, torch.int64, torch.float32, 'cpu')
+        mash.loadParams(mask_params, sh_params, rotate_vectors, positions)
+
+        face_to_pts = mash.toFaceToPoints()
+
         feed_dict = {
+            "surface_points": face_to_pts,
             "rotate_vectors": torch.tensor(rotate_vectors).float(),
             "positions": torch.tensor(positions).float(),
             "mask_params": torch.tensor(mask_params).float(),

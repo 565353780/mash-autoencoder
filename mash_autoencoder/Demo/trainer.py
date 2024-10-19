@@ -8,7 +8,7 @@ def demo():
     dataset_root_folder_path = "/home/chli/Dataset/"
     batch_size = 128
     accum_iter = 1
-    num_workers = 12
+    num_workers = 16
     model_file_path = "./output/ptv3-v1-1/model_best.pth"
     model_file_path = None
     dtype = torch.float16
