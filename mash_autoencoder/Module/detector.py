@@ -7,6 +7,7 @@ import numpy as np
 from typing import Union
 
 from ma_sh.Model.mash import Mash
+from ma_sh.Method.rotate import toRotateVectorsFromOrthoPoses
 
 # from mash_autoencoder.Model.shape_vae import ShapeVAE
 # from mash_autoencoder.Model.mash_vae import MashVAE
@@ -93,7 +94,7 @@ class Detector(object):
         mask_params = mash_params["mask_params"]
         sh_params = mash_params["sh_params"]
 
-        mash = Mash(400, 3, 2, 0, 1, 1.0, True, torch.int64, torch.float32, 'cpu')
+        mash = Mash(400, 3, 2, 0, 1, 1.0, True, torch.int64, torch.float64, 'cpu')
         mash.loadParams(mask_params, sh_params, rotate_vectors, positions)
 
         surface_points = mash.toFaceToPoints().unsqueeze(0).type(self.dtype).to(self.device)
@@ -101,5 +102,7 @@ class Detector(object):
         data = {'surface_points': surface_points}
 
         results = self.model(data)
+
+        results['mash_params_dict']['rotate_vectors'] = toRotateVectorsFromOrthoPoses(results['mash_params_dict']['ortho_poses'][0].type(torch.float64)).unsqueeze(0)
 
         return results
