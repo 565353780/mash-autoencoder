@@ -1,5 +1,5 @@
 import sys
-sys.path.append('/home/chli/github/POINTS/point-cept/')
+sys.path.append('../point-cept/')
 
 import torch
 from torch import nn

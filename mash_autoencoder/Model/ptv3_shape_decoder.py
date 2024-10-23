@@ -1,5 +1,5 @@
 import sys
-sys.path.append('/home/chli/github/POINTS/point-cept/')
+sys.path.append('../point-cept/')
 
 import torch
 from torch import nn
@@ -34,7 +34,7 @@ class PTV3ShapeDecoder(nn.Module):
         )
 
         if False:
-            self.rotate_vectors_decoder = nn.Sequential(
+            self.ortho_poses_decoder = nn.Sequential(
                 nn.Linear(ptv3_output_dim, ptv3_output_dim // 2),
                 nn.Linear(ptv3_output_dim // 2, ptv3_output_dim // 2),
                 nn.Linear(ptv3_output_dim // 2, 3),
@@ -58,7 +58,7 @@ class PTV3ShapeDecoder(nn.Module):
                 nn.Linear(ptv3_output_dim // 2, sh_dim),
             )
         else:
-            self.rotate_vectors_decoder = nn.Linear(ptv3_output_dim, 3)
+            self.ortho_poses_decoder = nn.Linear(ptv3_output_dim, 6)
 
             self.positions_decoder = nn.Linear(ptv3_output_dim, 3)
 
@@ -89,14 +89,14 @@ class PTV3ShapeDecoder(nn.Module):
 
         x = points.feat.reshape(surface_points.shape[0], surface_points.shape[1], -1)
 
-        rotate_vectors = self.rotate_vectors_decoder(x)
+        ortho_poses = self.ortho_poses_decoder(x)
         delta_positions = self.positions_decoder(x)
         positions = surface_points + delta_positions
         mask_params = self.mask_params_decoder(x)
         sh_params = self.sh_params_decoder(x)
 
         mash_dict = {
-            'rotate_vectors': rotate_vectors,
+            'ortho_poses': ortho_poses,
             'positions': positions,
             'mask_params': mask_params,
             'sh_params': sh_params,
