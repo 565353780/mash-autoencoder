@@ -103,6 +103,4 @@ class Detector(object):
 
         results = self.model(data)
 
-        results['mash_params_dict']['rotate_vectors'] = toRotateVectorsFromOrthoPoses(results['mash_params_dict']['ortho_poses'][0].type(torch.float64)).unsqueeze(0)
-
         return results

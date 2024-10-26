@@ -25,10 +25,10 @@ class PTV3ShapeDecoder(nn.Module):
         self.feature_encoder = PointTransformerV3(
             in_channels=self.embedding.embedding_dim,
             order=("z", "z-trans", "hilbert", "hilbert-trans"),
-            enc_depths=(4, 4, 4, 12, 4),
+            enc_depths=(2, 2, 2, 6, 2),
             enc_channels=(32, 64, 128, 256, 512),
             enc_patch_size=(1024, 1024, 1024, 1024, 1024),
-            dec_depths=(4, 4, 4, 4),
+            dec_depths=(2, 2, 2, 2),
             dec_channels=(ptv3_output_dim, 64, 128, 256),
             dec_patch_size=(1024, 1024, 1024, 1024),
         )

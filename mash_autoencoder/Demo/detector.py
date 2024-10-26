@@ -15,9 +15,10 @@ from mash_autoencoder.Module.detector import Detector
 
 
 def demo():
-    model_file_path = "./output/20241018_23:47:48/model_last.pth"
+    model_file_path = "./output/ptv3-v3-1/model_best.pth"
     dtype = torch.float32
     device = "cuda:0"
+    mash_device = "cuda:0"
 
     dataset_root_folder_path = "/home/chli/Dataset/"
     mash_dataset = MashDataset(dataset_root_folder_path, "val")
@@ -41,10 +42,10 @@ def demo():
                 kl = results['kl'][0]
                 print("kl:", kl)
 
-            rotate_vectors = mash_params_dict['rotate_vectors'][0]
-            positions = mash_params_dict['positions'][0]
-            mask_params = mash_params_dict['mask_params'][0]
-            sh_params = mash_params_dict['sh_params'][0]
+            ortho_poses = mash_params_dict['ortho_poses'][0].to(mash_device)
+            positions = mash_params_dict['positions'][0].to(mash_device)
+            mask_params = mash_params_dict['mask_params'][0].to(mash_device)
+            sh_params = mash_params_dict['sh_params'][0].to(mash_device)
 
             mash = Mash(
                 anchor_num=400,
@@ -55,8 +56,8 @@ def demo():
                 sample_point_scale=0.8,
                 use_inv=True,
                 dtype=dtype,
-                device=device)
-            mash.loadParams(mask_params, sh_params, rotate_vectors, positions)
+                device=mash_device)
+            mash.loadParams(mask_params=mask_params, sh_params=sh_params, positions=positions, ortho6d_poses=ortho_poses)
             mash_pcd = getPointCloud(toNumpy(torch.vstack(mash.toSamplePoints()[:2])))
             o3d.io.write_point_cloud(
                 "./output/test_mash_pcd" + str(i) + ".ply", mash_pcd, write_ascii=True
@@ -71,4 +72,5 @@ def demo():
 
         if False:
             copyfile(gt_mesh_file_path, "./output/test_mash_mesh_gt" + str(i) + ".obj")
+
     return True
