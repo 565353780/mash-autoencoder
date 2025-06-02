@@ -8,3 +8,6 @@ ssl
 # output
 output
 logs
+
+# script
+sync.sh
