@@ -19,5 +19,5 @@ pip install -U trimesh tensorboard Cython pykdtree timm einops
 # pip install -U torch torchvision torchaudio
 # pip install torch-cluster torch-scatter -f https://data.pyg.org/whl/torch-2.3.0+cu121.html
 
-pip install -U causal-conv1d
-pip install -U mamba-ssm
+# pip install -U causal-conv1d
+# pip install -U mamba-ssm
