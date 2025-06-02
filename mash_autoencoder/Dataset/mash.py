@@ -1,6 +1,3 @@
-import sys
-sys.path.append('../ma-sh/')
-
 import os
 import torch
 import numpy as np
@@ -22,7 +19,9 @@ class MashDataset(Dataset):
         self.preload_data = preload_data
 
         self.mash_folder_path = self.dataset_root_folder_path + "MashV4/"
-        self.split_folder_path = self.dataset_root_folder_path + "SplitMashKLAutoEncoder/"
+        self.split_folder_path = (
+            self.dataset_root_folder_path + "SplitMashKLAutoEncoder/"
+        )
         assert os.path.exists(self.mash_folder_path)
         assert os.path.exists(self.split_folder_path)
 
@@ -126,7 +125,7 @@ class MashDataset(Dataset):
         mask_params = mask_params[permute_idxs]
         sh_params = sh_params[permute_idxs]
 
-        mash = Mash(400, 3, 2, 0, 1, 1.0, True, torch.int64, torch.float64, 'cpu')
+        mash = Mash(400, 3, 2, 0, 1, 1.0, True, torch.int64, torch.float64, "cpu")
         mash.loadParams(mask_params, sh_params, rotate_vectors, positions)
 
         face_to_pts = mash.toFaceToPoints()

@@ -1,7 +1,11 @@
 cd ..
+git clone https://github.com/565353780/base-trainer.git
 git clone https://github.com/565353780/point-cept.git
 
-cd point-cept
+cd base-trainer
+./setup.sh
+
+cd ../point-cept
 ./setup.sh
 
 if [ "$(uname)" == "Darwin" ]; then
