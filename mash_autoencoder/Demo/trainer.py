@@ -11,7 +11,7 @@ from mash_autoencoder.Module.trainer import Trainer
 
 
 def demo():
-    batch_size = 16
+    batch_size = 72
     accum_iter = 1
     num_workers = 16
     model_file_path = "./output/ptv3-v1-1/model_best.pth"

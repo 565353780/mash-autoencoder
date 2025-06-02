@@ -8,8 +8,6 @@ from pointcept.models.point_transformer_v3.point_transformer_v3m2_sonata import 
 from ma_sh.Model.simple_mash import SimpleMash
 from ma_sh.Method.rotate import toRotateVectorsFromOrthoPoses
 
-from mash_autoencoder.Model.Layer.point_embed import PointEmbed
-
 
 class PTV3ShapeDecoder(nn.Module):
     def __init__(
