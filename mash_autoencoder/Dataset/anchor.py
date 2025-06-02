@@ -23,7 +23,7 @@ class AnchorDataset(Dataset):
         self.mask_dim = 2 * self.mask_degree_max + 1
         self.sh_dim = (self.sh_degree_max + 1) ** 2
 
-        self.data_list = np.zeros([10000])
+        self.data_list = np.zeros([100000])
         return
 
     def __len__(self):
