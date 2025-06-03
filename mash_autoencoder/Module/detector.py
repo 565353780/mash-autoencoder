@@ -1,6 +1,3 @@
-import sys
-sys.path.append('../ma-sh/')
-
 import os
 import torch
 import numpy as np
@@ -8,6 +5,8 @@ from typing import Union
 
 from ma_sh.Model.mash import Mash
 from ma_sh.Method.rotate import toRotateVectorsFromOrthoPoses
+
+from mesh_graph_cut.Module.mesh_graph_cutter import MeshGraphCutter
 
 # from mash_autoencoder.Model.shape_vae import ShapeVAE
 # from mash_autoencoder.Model.mash_vae import MashVAE
@@ -54,53 +53,41 @@ class Detector(object):
 
         self.model.load_state_dict(state_dict)
         self.model.eval()
-        print('[INFO][Detector::loadModel]')
-        print('\t load model success!')
-        print('\t model_file_path:', model_file_path)
+        print("[INFO][Detector::loadModel]")
+        print("\t load model success!")
+        print("\t model_file_path:", model_file_path)
         return True
 
     @torch.no_grad()
-    def encodeFile(self, mash_params_file_path: str) -> Union[dict, None]:
-        if not os.path.exists(mash_params_file_path):
-            print("[ERROR][Detector::encodeFile]")
-            print("\t mash params file not exist!")
-            print("\t mash_params_file_path:", mash_params_file_path)
-            return None
+    def detect(self, surface_pts: Union[torch.Tensor, np.ndarray]) -> dict:
+        if isinstance(surface_pts, np.ndarray):
+            surface_pts = torch.from_numpy(surface_pts)
 
-        mash_params = np.load(mash_params_file_path, allow_pickle=True).item()
+        surface_pts = surface_pts.to(self.device, dtype=self.dtype)
 
-        surface_points = mash_params["surface_points"]
-        surface_points_tensor = torch.from_numpy(surface_points).unsqueeze(0).type(self.dtype).to(self.device)
+        data_dict = {
+            "surface_pts": surface_pts,
+        }
 
-        x, kl = self.model.encode(surface_points_tensor, 0.0, True)
-        results = {'x': x, 'kl': kl}
-        return results
+        result_dict = self.model(data_dict)
 
-    def decodeLatent(self, latent: torch.Tensor) -> dict:
-        mash_params_dict = self.model.decode(latent)
-        return mash_params_dict
+        return result_dict
 
     @torch.no_grad()
-    def detectFile(self, mash_params_file_path: str) -> Union[dict, None]:
-        if not os.path.exists(mash_params_file_path):
+    def detectMeshFile(
+        self, mesh_file_path: str, anchor_num: int = 4000
+    ) -> Union[dict, None]:
+        if not os.path.exists(mesh_file_path):
             print("[ERROR][Detector::detectFile]")
-            print("\t mash params file not exist!")
-            print("\t mash_params_file_path:", mash_params_file_path)
+            print("\t mesh file not exist!")
+            print("\t mesh_file_path:", mesh_file_path)
             return None
 
-        mash_params = np.load(mash_params_file_path, allow_pickle=True).item()
-        rotate_vectors = mash_params["rotate_vectors"]
-        positions = mash_params["positions"]
-        mask_params = mash_params["mask_params"]
-        sh_params = mash_params["sh_params"]
+        mesh_graph_cutter = MeshGraphCutter(mesh_file_path)
+        mesh_graph_cutter.cutMesh(anchor_num)
 
-        mash = Mash(400, 3, 2, 0, 1, 1.0, True, torch.int64, torch.float64, 'cpu')
-        mash.loadParams(mask_params, sh_params, rotate_vectors, positions)
+        surface_pts = mesh_graph_cutter.sub_mesh_sample_points
 
-        surface_points = mash.toFaceToPoints().unsqueeze(0).type(self.dtype).to(self.device)
+        result_dict = self.detect(surface_pts)
 
-        data = {'surface_points': surface_points}
-
-        results = self.model(data)
-
-        return results
+        return result_dict

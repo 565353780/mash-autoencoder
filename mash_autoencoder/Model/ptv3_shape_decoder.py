@@ -151,6 +151,10 @@ class PTV3ShapeDecoder(nn.Module):
             "surface_pts": surface_pts,
             "boundary_pts": batched_boundary_pts,
             "inner_pts": batched_inner_pts,
+            "mask_params": mask_params,
+            "sh_params": sh_params,
+            "rotate_vectors": rotate_vectors,
+            "positions": positions,
         }
 
         return result_dict

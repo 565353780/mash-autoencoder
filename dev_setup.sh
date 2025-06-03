@@ -1,11 +1,15 @@
 cd ..
 git clone git@github.com:565353780/base-trainer.git
 git clone git@github.com:565353780/point-cept.git
+git clone git@github.com:565353780/mesh-graph-cut.git
 
 cd base-trainer
 ./dev_setup.sh
 
 cd ../point-cept
+./dev_setup.sh
+
+cd ../mesh-graph-cut
 ./dev_setup.sh
 
 if [ "$(uname)" == "Darwin" ]; then
