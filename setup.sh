@@ -2,6 +2,7 @@ cd ..
 git clone https://github.com/565353780/base-trainer.git
 git clone https://github.com/565353780/point-cept.git
 git clone https://github.com/565353780/mesh-graph-cut.git
+git clone https://github.com/565353780/chamfer-distance.git
 
 cd base-trainer
 ./setup.sh
@@ -10,6 +11,9 @@ cd ../point-cept
 ./setup.sh
 
 cd ../mesh-graph-cut
+./setup.sh
+
+cd ../chamfer-distance
 ./setup.sh
 
 if [ "$(uname)" == "Darwin" ]; then

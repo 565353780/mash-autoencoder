@@ -1,9 +1,11 @@
 import torch
-from torch import nn
 from typing import Union
 
 from base_trainer.Module.base_trainer import BaseTrainer
 
+from chamfer_distance.Module.chamfer_distances import ChamferDistances
+
+from mash_autoencoder.Config.constant import EPSILON
 from mash_autoencoder.Dataset.anchor import AnchorDataset
 # from mash_autoencoder.Dataset.mash import MashDataset
 
@@ -57,8 +59,6 @@ class Trainer(BaseTrainer):
         self.loss_surface_weight = 1.0
         self.loss_boundary_weight = 1.0
         self.loss_inner_weight = 1.0
-
-        self.loss_fn = nn.L1Loss()
 
         super().__init__(
             batch_size,
@@ -146,9 +146,28 @@ class Trainer(BaseTrainer):
         boundary_pts = result_dict["boundary_pts"]
         inner_pts = result_dict["inner_pts"]
 
-        loss_surface = self.loss_fn(surface_pts, gt_surface_pts)
-        loss_boundary = self.loss_fn(boundary_pts, gt_boundary_pts)
-        loss_inner = self.loss_fn(inner_pts, gt_inner_pts)
+        surface_dist1, surface_dist2 = ChamferDistances.namedAlgo("cuda")(
+            surface_pts, gt_surface_pts
+        )[:2]
+        boundary_dist1, boundary_dist2 = ChamferDistances.namedAlgo("cuda")(
+            boundary_pts, gt_boundary_pts
+        )[:2]
+        inner_dist1, inner_dist2 = ChamferDistances.namedAlgo("cuda")(
+            inner_pts, gt_inner_pts
+        )[:2]
+
+        surface_dist1 = torch.sqrt(surface_dist1 + EPSILON)
+        surface_dist2 = torch.sqrt(surface_dist2 + EPSILON)
+
+        boundary_dist1 = torch.sqrt(boundary_dist1 + EPSILON)
+        boundary_dist2 = torch.sqrt(boundary_dist2 + EPSILON)
+
+        inner_dist1 = torch.sqrt(inner_dist1 + EPSILON)
+        inner_dist2 = torch.sqrt(inner_dist2 + EPSILON)
+
+        loss_surface = torch.mean(surface_dist1) + torch.mean(surface_dist2)
+        loss_boundary = torch.mean(boundary_dist1) + torch.mean(boundary_dist2)
+        loss_inner = torch.mean(inner_dist1) + torch.mean(inner_dist2)
 
         weighted_loss_surface = self.loss_surface_weight * loss_surface
         weighted_loss_boundary = self.loss_boundary_weight * loss_boundary

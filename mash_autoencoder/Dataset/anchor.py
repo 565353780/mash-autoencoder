@@ -60,10 +60,10 @@ class AnchorDataset(Dataset):
 
         surface_pts = torch.vstack([boundary_pts, inner_pts])
 
-        min_xyz = torch.min(surface_pts, dim=0)[0]
-        max_xyz = torch.max(surface_pts, dim=0)[0]
+        min_xyz = torch.amin(surface_pts, dim=0)
+        max_xyz = torch.amax(surface_pts, dim=0)
 
-        center = (min_xyz + max_xyz) / 2.0
+        center = (min_xyz + max_xyz) * 0.5
 
         length = torch.max(max_xyz - min_xyz)
 

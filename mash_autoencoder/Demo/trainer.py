@@ -4,6 +4,7 @@ sys.path.append("../ma-sh")
 sys.path.append("../wn-nc")
 sys.path.append("../base-trainer")
 sys.path.append("../point-cept/")
+sys.path.append("../chamfer-distance/")
 
 import torch
 
@@ -14,8 +15,8 @@ def demo():
     batch_size = 256
     accum_iter = 1
     num_workers = 16
-    model_file_path = "./output/ptv3-v1-1/model_best.pth"
-    model_file_path = None
+    model_file_path = "./output/ptv3-v1/model_best.pth"
+    # model_file_path = None
     weights_only = True
     dtype = torch.float16
     device = "auto"
