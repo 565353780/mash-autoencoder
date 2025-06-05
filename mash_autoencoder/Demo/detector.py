@@ -19,7 +19,7 @@ from mash_autoencoder.Module.detector import Detector
 
 
 def demo():
-    model_file_path = "./output/ptv3-v1/model_best.pth"
+    model_file_path = "./output/ptv3-v2/model_best.pth"
     dtype = torch.float32
     device = "cuda:1"
     mash_device = "cpu"
@@ -27,7 +27,7 @@ def demo():
     mesh_file_path = os.environ["HOME"] + "/chLi/Dataset/vae-eval/mesh/000.obj"
     anchor_num = 4000
     batch_size = 400
-    points_per_submesh = 10001
+    points_per_submesh = 40**2 + 1
 
     print("model_file_path:", model_file_path)
     detector = Detector(model_file_path, dtype, device)

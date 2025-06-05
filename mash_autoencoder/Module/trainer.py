@@ -52,8 +52,8 @@ class Trainer(BaseTrainer):
 
         self.mask_degree_max = 3
         self.sh_degree_max = 2
-        self.sample_phi_num = 100
-        self.sample_theta_num = 100
+        self.sample_phi_num = 40
+        self.sample_theta_num = 40
         self.dtype = torch.float64
 
         self.loss_surface_weight = 1.0
@@ -126,7 +126,12 @@ class Trainer(BaseTrainer):
         elif model_id == 5:
             self.model = PTV3ShapeVAE().to(self.device)
         elif model_id == 6:
-            self.model = PTV3ShapeDecoder().to(self.device)
+            self.model = PTV3ShapeDecoder(
+                self.mask_degree_max,
+                self.sh_degree_max,
+                self.sample_phi_num,
+                self.sample_theta_num,
+            ).to(self.device)
         return True
 
     def preProcessData(self, data_dict: dict, is_training: bool = False) -> dict:
